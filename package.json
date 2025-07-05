@@ -1,0 +1,25 @@
+{
+  "name": "captionclip",
+  "version": "1.0.0",
+  "description": "A browser extension that extracts transcripts from YouTube videos with a single click.",
+  "main": "background.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/atarantino/CaptionClip.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/atarantino/CaptionClip/issues"
+  },
+  "homepage": "https://github.com/atarantino/CaptionClip#readme",
+  "dependencies": {
+    "@playwright/test": "^1.53.2",
+    "playwright": "^1.53.2"
+  }
+}

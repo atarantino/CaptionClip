@@ -204,48 +204,131 @@ actionAPI.onClicked.addListener(async (tab) => {
       // Copy to clipboard
       if (browserAPI.scripting) {
         // Chrome Manifest V3
-        await browserAPI.scripting.executeScript({
+        const copyResult = await browserAPI.scripting.executeScript({
           target: { tabId: tab.id },
-          func: (text) => {
-            // Create a textarea element to copy text
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
+          func: async (text) => {
+            try {
+              // Try modern Clipboard API first
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(text);
+                return { success: true, method: 'clipboard-api' };
+              }
+            } catch (e) {
+              console.log('Clipboard API failed, trying fallback:', e);
+            }
+            
+            // Fallback to execCommand
+            try {
+              const textarea = document.createElement('textarea');
+              textarea.value = text;
+              textarea.style.position = 'fixed';
+              textarea.style.opacity = '0';
+              textarea.style.pointerEvents = 'none';
+              textarea.style.zIndex = '-1';
+              document.body.appendChild(textarea);
+              
+              // Focus the textarea
+              textarea.focus();
+              textarea.select();
+              
+              // Try to select all text
+              textarea.setSelectionRange(0, textarea.value.length);
+              
+              // Execute copy command
+              const success = document.execCommand('copy');
+              document.body.removeChild(textarea);
+              
+              if (!success) {
+                throw new Error('execCommand copy failed');
+              }
+              
+              return { success: true, method: 'execCommand' };
+            } catch (e) {
+              console.error('Copy fallback failed:', e);
+              return { success: false, error: e.message };
+            }
           },
           args: [response.transcript]
         });
       } else if (browserAPI.tabs.executeScript) {
         // Firefox Manifest V2
-        await browserAPI.tabs.executeScript(tab.id, {
+        const copyResult = await browserAPI.tabs.executeScript(tab.id, {
           code: `
-            (function(text) {
-              const textarea = document.createElement('textarea');
-              textarea.value = text;
-              textarea.style.position = 'fixed';
-              textarea.style.opacity = '0';
-              document.body.appendChild(textarea);
-              textarea.select();
-              document.execCommand('copy');
-              document.body.removeChild(textarea);
+            (async function(text) {
+              try {
+                // Try modern Clipboard API first
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  await navigator.clipboard.writeText(text);
+                  return { success: true, method: 'clipboard-api' };
+                }
+              } catch (e) {
+                console.log('Clipboard API failed, trying fallback:', e);
+              }
+              
+              // Fallback to execCommand
+              try {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                textarea.style.pointerEvents = 'none';
+                textarea.style.zIndex = '-1';
+                document.body.appendChild(textarea);
+                
+                // Focus the textarea
+                textarea.focus();
+                textarea.select();
+                
+                // Try to select all text
+                textarea.setSelectionRange(0, textarea.value.length);
+                
+                // Execute copy command
+                const success = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                
+                if (!success) {
+                  throw new Error('execCommand copy failed');
+                }
+                
+                return { success: true, method: 'execCommand' };
+              } catch (e) {
+                console.error('Copy fallback failed:', e);
+                return { success: false, error: e.message };
+              }
             })(${JSON.stringify(response.transcript)});
           `
         });
       }
+      
+      // Check if copy was successful
+      let copySuccess = false;
+      if (browserAPI.scripting && copyResult && copyResult[0] && copyResult[0].result) {
+        copySuccess = copyResult[0].result.success;
+        if (!copySuccess) {
+          console.error('Copy failed:', copyResult[0].result.error);
+        } else {
+          console.log('Copy successful using method:', copyResult[0].result.method);
+        }
+      } else if (browserAPI.tabs.executeScript && copyResult && copyResult[0]) {
+        copySuccess = copyResult[0].success;
+        if (!copySuccess) {
+          console.error('Copy failed:', copyResult[0].error);
+        } else {
+          console.log('Copy successful using method:', copyResult[0].method);
+        }
+      }
 
-      // Show success toast on the page
-      if (browserAPI.scripting) {
-        // Chrome Manifest V3
-        await browserAPI.scripting.executeScript({
-          target: { tabId: tab.id },
-          func: () => {
-            const toast = document.createElement('div');
-            toast.textContent = '✓ Transcript copied to clipboard';
-            toast.style.cssText = `
+      // Show appropriate toast based on copy result
+      if (copySuccess) {
+        // Show success toast on the page
+        if (browserAPI.scripting) {
+          // Chrome Manifest V3
+          await browserAPI.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => {
+              const toast = document.createElement('div');
+              toast.textContent = '✓ Transcript copied to clipboard';
+              toast.style.cssText = `
               position: fixed;
               top: 20px;
               right: 20px;
@@ -333,6 +416,62 @@ actionAPI.onClicked.addListener(async (tab) => {
             })();
           `
         });
+      }
+      } else {
+        // Show error toast when copy fails
+        const showCopyFailedToast = () => {
+          const toast = document.createElement('div');
+          toast.textContent = '❌ Failed to copy transcript. Please try selecting and copying manually.';
+          toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #dc2626;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 999999;
+            animation: slideIn 0.3s ease-out;
+          `;
+          
+          const style = document.createElement('style');
+          style.textContent = `
+            @keyframes slideIn {
+              from { transform: translateX(100%); opacity: 0; }
+              to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+              from { transform: translateX(0); opacity: 1; }
+              to { transform: translateX(100%); opacity: 0; }
+            }
+          `;
+          document.head.appendChild(style);
+          
+          document.body.appendChild(toast);
+          
+          setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease-out forwards';
+            setTimeout(() => {
+              document.body.removeChild(toast);
+              document.head.removeChild(style);
+            }, 300);
+          }, 5000); // Show for longer since it's an error
+        };
+        
+        if (browserAPI.scripting) {
+          await browserAPI.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: showCopyFailedToast
+          });
+        } else if (browserAPI.tabs.executeScript) {
+          await browserAPI.tabs.executeScript(tab.id, {
+            code: `(${showCopyFailedToast.toString()})();`
+          });
+        }
       }
     }
   } catch (error) {

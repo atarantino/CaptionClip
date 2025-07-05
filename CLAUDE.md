@@ -17,6 +17,10 @@ This creates browser-specific distributions in:
 - `dist/chrome/` - Chrome extension (Manifest V3)
 - `dist/firefox/` - Firefox extension (Manifest V2)
 
+### Development Notes
+
+- Always run `node build.js` after making code changes to update the browser-specific distributions
+
 ## Architecture
 
 ### Extension Components
