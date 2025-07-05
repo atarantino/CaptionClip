@@ -4,7 +4,6 @@
   }
   window.__transcriptExtractorInitialized = true;
 
-  const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
 
   function injectCaptionClipButton() {
     if (!window.location.href.includes('youtube.com/watch')) {
@@ -249,25 +248,6 @@
     }, 3000);
   }
 
-  browserAPI.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "extract_transcript") {
-      injectCaptionClipButton();
-      
-      openAndExtractTranscript()
-        .then(transcript => {
-          sendResponse({ transcript: transcript });
-        })
-        .catch(error => {
-          sendResponse({ error: error.toString() });
-        });
-      return true;
-    }
-    
-    if (request.action === "inject_button") {
-      injectCaptionClipButton();
-      sendResponse({ success: true });
-    }
-  });
 
   injectCaptionClipButton();
   

@@ -4,16 +4,8 @@
   "version": "1.1",
   "description": "Extract YouTube video transcripts with one click. Instantly copy closed captions/subtitles to your clipboard.",
   "permissions": [
-    "activeTab",
-    "scripting",
-    "clipboardWrite"
+    "activeTab"
   ],
-  "background": {
-    "service_worker": "background.js"
-  },
-  "action": {
-    "default_icon": "icon.png"
-  },
   "content_scripts": [
     {
       "matches": [

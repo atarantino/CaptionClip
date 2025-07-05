@@ -8,8 +8,8 @@ const distDir = path.join(__dirname, 'dist');
 
 // Files to copy from root directory (browser-specific)
 const browserFiles = {
-  chrome: ['icon.png', 'content.js', 'background.js'],
-  firefox: ['icon.png', 'content.js', 'background.js']
+  chrome: ['icon.png', 'content.js'],
+  firefox: ['icon.png', 'content.js']
 };
 
 function copyRecursiveSync(src, dest) {
