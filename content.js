@@ -43,17 +43,56 @@
         clearInterval(checkForVoiceSearchButton);
         console.log('CaptionClip: Found voice search button, injecting CaptionClip button...');
         
+        // Detect YouTube theme - check multiple indicators
+        const htmlElement = document.documentElement;
+        const bodyElement = document.body;
+        const bodyStyles = window.getComputedStyle(bodyElement);
+        const htmlStyles = window.getComputedStyle(htmlElement);
+        
+        // Check various indicators for dark theme
+        const isDarkTheme = htmlElement.hasAttribute('dark') || 
+                           htmlElement.getAttribute('theme') === 'dark' ||
+                           htmlElement.classList.contains('dark') ||
+                           bodyElement.getAttribute('theme') === 'dark' ||
+                           bodyElement.classList.contains('dark') ||
+                           bodyStyles.backgroundColor.includes('24, 24, 24') ||
+                           bodyStyles.backgroundColor.includes('15, 15, 15') ||
+                           htmlStyles.backgroundColor.includes('24, 24, 24') ||
+                           htmlStyles.backgroundColor.includes('15, 15, 15') ||
+                           // Check if ytd-app has dark attribute/class
+                           document.querySelector('ytd-app[dark]') !== null ||
+                           document.querySelector('ytd-app.dark') !== null ||
+                           // Check for dark color scheme preference
+                           window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        console.log('CaptionClip: Detected dark theme:', isDarkTheme);
+        
+        // Store theme detection for debugging
+        window.captionClipDarkTheme = isDarkTheme;
+        
         // Create a button that visually matches the Create button using standard HTML
         const captionClipButton = document.createElement('button');
         captionClipButton.id = 'captionclip-button';
         captionClipButton.className = 'yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--overlay yt-spec-button-shape-next--size-m yt-spec-button-shape-next--icon-leading';
         captionClipButton.setAttribute('aria-label', 'Extract transcript with CaptionClip');
         captionClipButton.setAttribute('title', 'Extract transcript with CaptionClip');
+        
+        // Use appropriate colors based on theme
+        const buttonStyles = isDarkTheme ? {
+          background: 'rgba(255, 255, 255, 0.1)',
+          color: '#ffffff',
+          hoverBackground: 'rgba(255, 255, 255, 0.2)'
+        } : {
+          background: 'rgba(0, 0, 0, 0.05)',
+          color: '#030303',
+          hoverBackground: 'rgba(0, 0, 0, 0.1)'
+        };
+        
         captionClipButton.style.cssText = `
           display: inline-flex !important;
           align-items: center !important;
           margin-left: 8px !important;
-          background: var(--yt-spec-badge-chip-background, rgba(255, 255, 255, 0.1)) !important;
+          background: ${buttonStyles.background} !important;
           backdrop-filter: blur(2px) !important;
           border: none !important;
           border-radius: 18px !important;
@@ -62,7 +101,7 @@
           font-family: Roboto, Arial, sans-serif !important;
           font-size: 13px !important;
           font-weight: 500 !important;
-          color: var(--yt-spec-text-primary) !important;
+          color: ${buttonStyles.color} !important;
           cursor: pointer !important;
           transition: background-color 0.3s ease, color 0.3s ease !important;
           min-width: auto !important;
@@ -93,10 +132,10 @@
         
         // Add hover effects
         captionClipButton.onmouseenter = () => {
-          captionClipButton.style.setProperty('background', 'var(--yt-spec-badge-chip-background-hover, rgba(255, 255, 255, 0.2))', 'important');
+          captionClipButton.style.setProperty('background', buttonStyles.hoverBackground, 'important');
         };
         captionClipButton.onmouseleave = () => {
-          captionClipButton.style.setProperty('background', 'var(--yt-spec-badge-chip-background, rgba(255, 255, 255, 0.1))', 'important');
+          captionClipButton.style.setProperty('background', buttonStyles.background, 'important');
         };
         
         // Assemble the button
@@ -122,8 +161,8 @@
             
             // Start fade out after 2 seconds, then reset text after fade completes
             setTimeout(() => {
-              captionClipButton.style.setProperty('background', 'var(--yt-spec-badge-chip-background, rgba(255, 255, 255, 0.1))', 'important');
-              captionClipButton.style.setProperty('color', 'var(--yt-spec-text-primary)', 'important');
+              captionClipButton.style.setProperty('background', buttonStyles.background, 'important');
+              captionClipButton.style.setProperty('color', buttonStyles.color, 'important');
               
               // Wait for transition to complete before changing text
               setTimeout(() => {
@@ -143,8 +182,8 @@
             
             // Start fade out after 2 seconds, then reset text after fade completes
             setTimeout(() => {
-              captionClipButton.style.setProperty('background', 'var(--yt-spec-badge-chip-background, rgba(255, 255, 255, 0.1))', 'important');
-              captionClipButton.style.setProperty('color', 'var(--yt-spec-text-primary)', 'important');
+              captionClipButton.style.setProperty('background', buttonStyles.background, 'important');
+              captionClipButton.style.setProperty('color', buttonStyles.color, 'important');
               
               // Wait for transition to complete before changing text
               setTimeout(() => {
