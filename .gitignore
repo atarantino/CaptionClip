@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+
+# Build output
+dist/
+
+# Node modules (if added later)
+node_modules/
+
+# Editor directories and files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment variables
+.env
+.env.local
