@@ -1,23 +1,17 @@
-// Use browser API for cross-browser compatibility
 const browserAPI = (typeof browser !== 'undefined') ? browser : (typeof chrome !== 'undefined' ? chrome : null);
 
 if (!browserAPI) {
-  console.error('No browser API available');
   throw new Error('Browser API not found');
 }
 
-// Firefox uses browserAction, Chrome uses action
 const actionAPI = browserAPI.action || browserAPI.browserAction;
 
 if (!actionAPI) {
-  console.error('No action/browserAction API available');
   throw new Error('Action API not found');
 }
 
 actionAPI.onClicked.addListener(async (tab) => {
-  // Check if we're on a YouTube video page
   if (!tab.url || !tab.url.includes('youtube.com/watch')) {
-    // Show error toast on the page
     if (browserAPI.scripting) {
       await browserAPI.scripting.executeScript({
         target: { tabId: tab.id },
@@ -116,36 +110,28 @@ actionAPI.onClicked.addListener(async (tab) => {
   }
 
   try {
-    // Try to send message to content script
     let response;
     try {
       response = await browserAPI.tabs.sendMessage(tab.id, { action: 'extract_transcript' });
     } catch (error) {
-      // Content script might not be injected yet, inject it now
-      console.log('Content script not found, injecting...');
       
-      // Firefox Manifest V2 uses tabs.executeScript
       if (browserAPI.tabs.executeScript) {
         await browserAPI.tabs.executeScript(tab.id, {
           file: 'content.js'
         });
       } else if (browserAPI.scripting) {
-        // Chrome Manifest V3 uses scripting.executeScript
         await browserAPI.scripting.executeScript({
           target: { tabId: tab.id },
           files: ['content.js']
         });
       }
       
-      // Wait a bit for the content script to initialize
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Try sending message again
       response = await browserAPI.tabs.sendMessage(tab.id, { action: 'extract_transcript' });
     }
     
     if (response.error) {
-      // Show error toast
       const showErrorToast = (message) => {
         const toast = document.createElement('div');
         toast.textContent = `❌ ${message}`;
@@ -201,23 +187,18 @@ actionAPI.onClicked.addListener(async (tab) => {
         });
       }
     } else if (response.transcript) {
-      // Copy to clipboard
       if (browserAPI.scripting) {
-        // Chrome Manifest V3
         const copyResult = await browserAPI.scripting.executeScript({
           target: { tabId: tab.id },
           func: async (text) => {
             try {
-              // Try modern Clipboard API first
               if (navigator.clipboard && navigator.clipboard.writeText) {
                 await navigator.clipboard.writeText(text);
                 return { success: true, method: 'clipboard-api' };
               }
             } catch (e) {
-              console.log('Clipboard API failed, trying fallback:', e);
             }
             
-            // Fallback to execCommand
             try {
               const textarea = document.createElement('textarea');
               textarea.value = text;
@@ -227,14 +208,11 @@ actionAPI.onClicked.addListener(async (tab) => {
               textarea.style.zIndex = '-1';
               document.body.appendChild(textarea);
               
-              // Focus the textarea
               textarea.focus();
               textarea.select();
               
-              // Try to select all text
               textarea.setSelectionRange(0, textarea.value.length);
               
-              // Execute copy command
               const success = document.execCommand('copy');
               document.body.removeChild(textarea);
               
@@ -244,28 +222,23 @@ actionAPI.onClicked.addListener(async (tab) => {
               
               return { success: true, method: 'execCommand' };
             } catch (e) {
-              console.error('Copy fallback failed:', e);
               return { success: false, error: e.message };
             }
           },
           args: [response.transcript]
         });
       } else if (browserAPI.tabs.executeScript) {
-        // Firefox Manifest V2
         const copyResult = await browserAPI.tabs.executeScript(tab.id, {
           code: `
             (async function(text) {
               try {
-                // Try modern Clipboard API first
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                   await navigator.clipboard.writeText(text);
                   return { success: true, method: 'clipboard-api' };
                 }
               } catch (e) {
-                console.log('Clipboard API failed, trying fallback:', e);
-              }
+                }
               
-              // Fallback to execCommand
               try {
                 const textarea = document.createElement('textarea');
                 textarea.value = text;
@@ -275,14 +248,11 @@ actionAPI.onClicked.addListener(async (tab) => {
                 textarea.style.zIndex = '-1';
                 document.body.appendChild(textarea);
                 
-                // Focus the textarea
                 textarea.focus();
                 textarea.select();
                 
-                // Try to select all text
                 textarea.setSelectionRange(0, textarea.value.length);
                 
-                // Execute copy command
                 const success = document.execCommand('copy');
                 document.body.removeChild(textarea);
                 
@@ -292,37 +262,22 @@ actionAPI.onClicked.addListener(async (tab) => {
                 
                 return { success: true, method: 'execCommand' };
               } catch (e) {
-                console.error('Copy fallback failed:', e);
-                return { success: false, error: e.message };
+                  return { success: false, error: e.message };
               }
             })(${JSON.stringify(response.transcript)});
           `
         });
       }
       
-      // Check if copy was successful
       let copySuccess = false;
       if (browserAPI.scripting && copyResult && copyResult[0] && copyResult[0].result) {
         copySuccess = copyResult[0].result.success;
-        if (!copySuccess) {
-          console.error('Copy failed:', copyResult[0].result.error);
-        } else {
-          console.log('Copy successful using method:', copyResult[0].result.method);
-        }
       } else if (browserAPI.tabs.executeScript && copyResult && copyResult[0]) {
         copySuccess = copyResult[0].success;
-        if (!copySuccess) {
-          console.error('Copy failed:', copyResult[0].error);
-        } else {
-          console.log('Copy successful using method:', copyResult[0].method);
-        }
       }
 
-      // Show appropriate toast based on copy result
       if (copySuccess) {
-        // Show success toast on the page
         if (browserAPI.scripting) {
-          // Chrome Manifest V3
           await browserAPI.scripting.executeScript({
             target: { tabId: tab.id },
             func: () => {
@@ -369,7 +324,6 @@ actionAPI.onClicked.addListener(async (tab) => {
           }
         });
       } else if (browserAPI.tabs.executeScript) {
-        // Firefox Manifest V2
         await browserAPI.tabs.executeScript(tab.id, {
           code: `
             (function() {
@@ -418,7 +372,6 @@ actionAPI.onClicked.addListener(async (tab) => {
         });
       }
       } else {
-        // Show error toast when copy fails
         const showCopyFailedToast = () => {
           const toast = document.createElement('div');
           toast.textContent = '❌ Failed to copy transcript. Please try selecting and copying manually.';
@@ -475,8 +428,6 @@ actionAPI.onClicked.addListener(async (tab) => {
       }
     }
   } catch (error) {
-    console.error('Error:', error);
-    // Show error toast
     const showErrorToast = () => {
       const toast = document.createElement('div');
       toast.textContent = '❌ Failed to extract transcript. Please try again.';
@@ -532,8 +483,6 @@ actionAPI.onClicked.addListener(async (tab) => {
         });
       }
     } catch (e) {
-      // Fallback if we can't show toast
-      console.error('Could not show error toast:', e);
     }
   }
 });
