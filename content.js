@@ -306,96 +306,17 @@ async function openAndExtractTranscript() {
 }
 
 async function tryOpenTranscriptPanel() {
-  const methods = [
-    tryOpenViaShowTranscriptButton,
-    tryOpenViaMoreActions,
-    tryOpenViaThreeDots
-  ];
-
-  for (const method of methods) {
-    try {
-      const success = await method();
-      if (success) {
-        return true;
-      }
-    } catch (e) {
+  try {
+    const success = await tryOpenViaShowTranscriptButton();
+    if (success) {
+      return true;
     }
+  } catch (e) {
   }
 
-  throw new Error('Could not open transcript panel using any method');
+  throw new Error('Could not open transcript panel');
 }
 
-async function tryOpenViaMoreActions() {
-  const buttonSelectors = [
-    'button.ytp-button[aria-label="More actions"]',
-    'button.ytp-button[data-tooltip-target-id="ytp-autonav-toggle-button"]',
-    'button.ytp-settings-button'
-  ];
-
-  let moreActionsButton = null;
-  for (const selector of buttonSelectors) {
-    const button = document.querySelector(selector);
-    if (button) {
-      moreActionsButton = button;
-      break;
-    }
-  }
-
-  if (!moreActionsButton) {
-    throw new Error('More actions button not found in player');
-  }
-
-  moreActionsButton.click();
-
-  await new Promise(resolve => setTimeout(resolve, 1000));
-
-  const menuItems = Array.from(document.querySelectorAll('.ytp-panel-menu .ytp-menuitem, .ytp-drop-down-menu .ytp-menuitem'));
-
-  const transcriptMenuItem = menuItems.find(item => {
-    const text = item.textContent.toLowerCase();
-    return text.includes('transcript') || text.includes('caption');
-  });
-
-  if (!transcriptMenuItem) {
-    document.body.click();
-    throw new Error('Transcript option not found in player menu');
-  }
-
-  transcriptMenuItem.click();
-
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  return true;
-}
-
-async function tryOpenViaThreeDots() {
-  const menuButtons = Array.from(document.querySelectorAll('button'));
-  const moreButton = menuButtons.find(button => {
-    const ariaLabel = button.getAttribute('aria-label');
-    return ariaLabel && ariaLabel.includes('More actions') && !button.classList.contains('ytp-button');
-  });
-
-  if (!moreButton) {
-    throw new Error('More button not found below video');
-  }
-
-  moreButton.click();
-
-  await new Promise(resolve => setTimeout(resolve, 1000));
-
-  const menuItems = Array.from(document.querySelectorAll('tp-yt-paper-listbox tp-yt-paper-item, ytd-menu-service-item-renderer'));
-
-  const transcriptItem = menuItems.find(item => item.textContent.toLowerCase().includes('transcript'));
-
-  if (!transcriptItem) {
-    document.body.click();
-    throw new Error('Transcript option not found in dropdown menu');
-  }
-
-  transcriptItem.click();
-
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  return true;
-}
 
 async function tryOpenViaShowTranscriptButton() {
   const transcriptButton = document.querySelector('ytd-video-description-transcript-section-renderer button[aria-label="Show transcript"]');
