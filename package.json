@@ -4,7 +4,10 @@
   "description": "A browser extension that extracts transcripts from YouTube videos with a single click.",
   "main": "background.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node run-tests.js",
+    "test:chrome": "node test-chrome.js",
+    "test:firefox": "node test-firefox.js",
+    "build": "node build.js"
   },
   "repository": {
     "type": "git",
