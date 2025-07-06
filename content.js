@@ -25,18 +25,41 @@
         const bodyStyles = window.getComputedStyle(bodyElement);
         const htmlStyles = window.getComputedStyle(htmlElement);
         
-        const isDarkTheme = htmlElement.hasAttribute('dark') || 
-                           htmlElement.getAttribute('theme') === 'dark' ||
-                           htmlElement.classList.contains('dark') ||
-                           bodyElement.getAttribute('theme') === 'dark' ||
-                           bodyElement.classList.contains('dark') ||
-                           bodyStyles.backgroundColor.includes('24, 24, 24') ||
-                           bodyStyles.backgroundColor.includes('15, 15, 15') ||
-                           htmlStyles.backgroundColor.includes('24, 24, 24') ||
-                           htmlStyles.backgroundColor.includes('15, 15, 15') ||
-                           document.querySelector('ytd-app[dark]') !== null ||
-                           document.querySelector('ytd-app.dark') !== null ||
-                           window.matchMedia('(prefers-color-scheme: dark)').matches;
+        let isDarkTheme = false;
+        
+        const ytdApp = document.querySelector('ytd-app');
+        if (ytdApp) {
+          isDarkTheme = ytdApp.hasAttribute('dark') || 
+                       ytdApp.getAttribute('theme') === 'dark' ||
+                       ytdApp.classList.contains('dark');
+        }
+        
+        if (!isDarkTheme) {
+          isDarkTheme = htmlElement.hasAttribute('dark') || 
+                       htmlElement.getAttribute('theme') === 'dark' ||
+                       htmlElement.classList.contains('dark') ||
+                       bodyElement.getAttribute('theme') === 'dark' ||
+                       bodyElement.classList.contains('dark');
+        }
+        
+        if (!isDarkTheme) {
+          const topBar = document.querySelector('#masthead, #container.ytd-masthead');
+          if (topBar) {
+            const topBarStyles = window.getComputedStyle(topBar);
+            const topBarBg = topBarStyles.backgroundColor;
+            isDarkTheme = topBarBg.includes('33, 33, 33') || 
+                         topBarBg.includes('24, 24, 24') || 
+                         topBarBg.includes('15, 15, 15') ||
+                         topBarBg.includes('35, 35, 35');
+          }
+        }
+        
+        if (!isDarkTheme) {
+          isDarkTheme = bodyStyles.backgroundColor.includes('24, 24, 24') ||
+                       bodyStyles.backgroundColor.includes('15, 15, 15') ||
+                       htmlStyles.backgroundColor.includes('24, 24, 24') ||
+                       htmlStyles.backgroundColor.includes('15, 15, 15');
+        }
         
         const captionClipButton = document.createElement('button');
         captionClipButton.id = 'captionclip-button';
