@@ -1,30 +1,34 @@
-const { firefox } = require('playwright');
+const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
 
-async function testFirefoxExtension() {
+async function testChromeExtension() {
   let context;
   try {
-    context = await firefox.launchPersistentContext('', {
+    const pathToExtension = path.join(__dirname, '..', 'dist', 'chrome');
+    
+    context = await chromium.launchPersistentContext('', {
       headless: true,
-      args: ['--new-instance'],
-      firefoxUserPrefs: {
-        'xpinstall.signatures.required': false,
-        'extensions.experiments.enabled': true
-      }
+      channel: 'chromium', // Use chromium channel for new headless mode with extension support
+      args: [
+        `--disable-extensions-except=${pathToExtension}`,
+        `--load-extension=${pathToExtension}`,
+        '--no-first-run',
+        '--no-default-browser-check',
+        '--disable-blink-features=AutomationControlled'
+      ]
     });
 
     const page = await context.newPage();
     await page.goto('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(3000);
+    
+    await page.waitForSelector('#voice-search-button', { timeout: 10000 });
+    
+    // Wait for content script to inject and create button
+    await page.waitForTimeout(5000);
 
-    const contentScriptPath = path.join(__dirname, 'dist', 'firefox', 'content.js');
-    const contentScript = fs.readFileSync(contentScriptPath, 'utf8');
-    await page.evaluate(contentScript);
-    await page.waitForTimeout(2000);
-
-    const button = await page.waitForSelector('#captionclip-button', { timeout: 5000 });
+    const button = await page.waitForSelector('#captionclip-button', { timeout: 15000 });
     if (!button) {
       throw new Error('CaptionClip button not found');
     }
@@ -49,20 +53,20 @@ async function testFirefoxExtension() {
       throw new Error(`Button text incorrect: ${buttonInfo.text}`);
     }
 
-    console.log('✓ Firefox test passed');
+    console.log('✓ Chrome test passed');
     await context.close();
     return true;
   } catch (error) {
-    console.error('✗ Firefox test failed:', error.message);
+    console.error('✗ Chrome test failed:', error.message);
     if (context) await context.close();
     return false;
   }
 }
 
 if (require.main === module) {
-  testFirefoxExtension().then(success => {
+  testChromeExtension().then(success => {
     process.exit(success ? 0 : 1);
   });
 }
 
-module.exports = testFirefoxExtension;
+module.exports = testChromeExtension;

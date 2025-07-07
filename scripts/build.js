@@ -3,8 +3,8 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const browsers = ['chrome', 'firefox'];
-const manifestsDir = path.join(__dirname, 'manifests');
-const distDir = path.join(__dirname, 'dist');
+const manifestsDir = path.join(__dirname, '..', 'src', 'manifests');
+const distDir = path.join(__dirname, '..', 'dist');
 
 // Files to copy from root directory (browser-specific)
 const browserFiles = {
@@ -31,7 +31,7 @@ browsers.forEach(browser => {
   // Copy files from root directory (browser-specific)
   const filesToCopy = browserFiles[browser] || [];
   filesToCopy.forEach(file => {
-    const srcPath = path.join(__dirname, file);
+    const srcPath = path.join(__dirname, '..', 'src', file);
     if (fs.existsSync(srcPath)) {
       fs.copyFileSync(srcPath, path.join(browserDist, file));
     }
@@ -43,7 +43,7 @@ browsers.forEach(browser => {
     fs.copyFileSync(manifestPath, path.join(browserDist, 'manifest.json'));
   } else {
     // Fallback: use the root manifest.json if browser-specific doesn't exist
-    const rootManifest = path.join(__dirname, 'manifest.json');
+    const rootManifest = path.join(__dirname, '..', 'src', 'manifest.json');
     if (fs.existsSync(rootManifest)) {
       fs.copyFileSync(rootManifest, path.join(browserDist, 'manifest.json'));
     }
