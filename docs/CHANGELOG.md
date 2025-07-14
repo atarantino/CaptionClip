@@ -6,11 +6,14 @@
 - **Optimized transcript extraction**: Removed ineffective transcript opening methods based on performance testing
 - **Improved reliability**: Simplified transcript panel opening logic to use only the most successful method (100% success rate)
 - **Reduced code complexity**: Removed 79 lines of dead code for better maintainability
+- **Reorganized project structure**: Created organized directory structure with docs/, src/, tests/, scripts/ for better maintainability
 
 ### Technical Details
 - Removed `tryOpenViaMoreActions()` and `tryOpenViaThreeDots()` methods (0% success rate in testing)
 - Streamlined `tryOpenTranscriptPanel()` to use only `tryOpenViaShowTranscriptButton()` method
 - Added automated testing infrastructure to validate transcript opening methods
+- Moved all files to appropriate directories following standard conventions
+- Updated all path references and build scripts for new structure
 
 ## [1.2.0] - 2025-01-07
 
