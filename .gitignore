@@ -21,3 +21,6 @@ npm-debug.log*
 # Environment variables
 .env
 .env.local
+
+# Test artifacts
+temp-profile/
