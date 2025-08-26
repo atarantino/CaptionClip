@@ -1,6 +1,6 @@
 {
   "name": "captionclip",
-  "version": "1.4",
+  "version": "1.5",
   "description": "A browser extension that extracts transcripts from YouTube videos with a single click.",
   "main": "src/content.js",
   "scripts": {
