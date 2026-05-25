@@ -20,11 +20,11 @@
       existingPanel.remove();
     }
     
-    const checkForVoiceSearchButton = setInterval(() => {
-      const voiceSearchButton = document.querySelector('#voice-search-button');
+    const checkForButtonAnchor = setInterval(() => {
+      const buttonAnchor = findCaptionClipInsertionAnchor();
       
-      if (voiceSearchButton) {
-        clearInterval(checkForVoiceSearchButton);
+      if (buttonAnchor) {
+        clearInterval(checkForButtonAnchor);
         
         const htmlElement = document.documentElement;
         const bodyElement = document.body;
@@ -85,12 +85,16 @@
         
         const buttonStyles = isDarkTheme ? {
           background: 'rgba(255, 255, 255, 0.1)',
+          border: '1px solid rgba(255, 255, 255, 0.24)',
           color: '#ffffff',
-          hoverBackground: 'rgba(255, 255, 255, 0.2)'
+          hoverBackground: 'rgba(255, 255, 255, 0.2)',
+          shadow: 'none'
         } : {
-          background: 'rgba(0, 0, 0, 0.05)',
-          color: '#030303',
-          hoverBackground: 'rgba(0, 0, 0, 0.1)'
+          background: '#ffffff',
+          border: '1px solid rgba(15, 15, 15, 0.28)',
+          color: '#0f0f0f',
+          hoverBackground: '#f2f2f2',
+          shadow: '0 1px 2px rgba(15, 15, 15, 0.16)'
         };
         
         captionClipButton.style.cssText = `
@@ -98,8 +102,9 @@
           align-items: center !important;
           background: ${buttonStyles.background} !important;
           backdrop-filter: blur(2px) !important;
-          border: none !important;
+          border: ${buttonStyles.border} !important;
           border-radius: 18px !important;
+          box-shadow: ${buttonStyles.shadow} !important;
           padding: 0 8px !important;
           height: 36px !important;
           font-family: Roboto, Arial, sans-serif !important;
@@ -121,11 +126,7 @@
           height: 20px !important;
         `;
         
-        iconContainer.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" width="20" style="fill: currentColor;">
-            <path d="M3 3v18h18V3H3zm16 16H5V5h14v14zM7 7h10v2H7zm0 4h10v2H7zm0 4h7v2H7z"/>
-          </svg>
-        `;
+        iconContainer.appendChild(createSvgIcon('M3 3v18h18V3H3zm16 16H5V5h14v14zM7 7h10v2H7zm0 4h10v2H7zm0 4h7v2H7z', 20));
         
         const textSpan = document.createElement('span');
         textSpan.textContent = 'Transcript';
@@ -152,8 +153,9 @@
           justify-content: center !important;
           background: ${buttonStyles.background} !important;
           backdrop-filter: blur(2px) !important;
-          border: none !important;
+          border: ${buttonStyles.border} !important;
           border-radius: 18px !important;
+          box-shadow: ${buttonStyles.shadow} !important;
           padding: 0 !important;
           width: 36px !important;
           height: 36px !important;
@@ -163,11 +165,7 @@
           transition: background-color 0.3s ease, color 0.3s ease !important;
         `;
         
-        settingsButton.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 0 24 24" width="16" style="fill: currentColor;">
-            <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
-          </svg>
-        `;
+        settingsButton.appendChild(createSvgIcon('M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z', 16));
         
         settingsButton.onmouseenter = () => {
           settingsButton.style.setProperty('background', buttonStyles.hoverBackground, 'important');
@@ -360,16 +358,50 @@
         captionClipContainer.appendChild(settingsButton);
         captionClipContainer.appendChild(settingsPanel);
         
-        const voiceSearchContainer = voiceSearchButton.parentElement;
-        if (voiceSearchContainer) {
-          voiceSearchContainer.insertBefore(captionClipContainer, voiceSearchButton.nextSibling);
+        const insertionParent = buttonAnchor.parentElement;
+        if (insertionParent) {
+          insertionParent.insertBefore(captionClipContainer, buttonAnchor.nextSibling);
         } else {
-          voiceSearchButton.parentNode.insertBefore(captionClipContainer, voiceSearchButton.nextSibling);
+          buttonAnchor.parentNode.insertBefore(captionClipContainer, buttonAnchor.nextSibling);
         }
       }
     }, 1000);
     
-    setTimeout(() => clearInterval(checkForVoiceSearchButton), 30000);
+    setTimeout(() => clearInterval(checkForButtonAnchor), 30000);
+  }
+
+  function findCaptionClipInsertionAnchor() {
+    const anchors = [
+      '#voice-search-button',
+      '#end #buttons ytd-button-renderer',
+      '#end #buttons button',
+      'ytd-masthead #buttons ytd-button-renderer',
+      'ytd-masthead #buttons button'
+    ];
+
+    for (const selector of anchors) {
+      const anchor = document.querySelector(selector);
+      if (anchor) {
+        return anchor;
+      }
+    }
+
+    return null;
+  }
+
+  function createSvgIcon(pathData, size) {
+    const namespace = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(namespace, 'svg');
+    svg.setAttribute('height', String(size));
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', String(size));
+    svg.style.fill = 'currentColor';
+
+    const path = document.createElementNS(namespace, 'path');
+    path.setAttribute('d', pathData);
+    svg.appendChild(path);
+
+    return svg;
   }
 
   async function copyToClipboard(text) {
@@ -483,17 +515,21 @@ async function openAndExtractTranscript() {
     throw new Error('Not a YouTube video page');
   }
 
-  const existingPanel = document.querySelector('ytd-transcript-search-panel-renderer');
-  if (!existingPanel) {
+  if (!hasTranscriptSegments()) {
     await tryOpenTranscriptPanel();
   }
 
-  const segmentsContainer = await waitForElement('#segments-container', 10000)
+  await waitForTranscriptSegments(10000)
     .catch(err => {
       throw new Error('Transcript segments not found. The video might not have a transcript available.');
     });
 
-  return extractYouTubeTranscript();
+  const transcript = extractYouTubeTranscript();
+  if (!transcript) {
+    throw new Error('No transcript segments found. The video might not have a transcript.');
+  }
+
+  return transcript;
 }
 
 async function tryOpenTranscriptPanel() {
@@ -510,9 +546,10 @@ async function tryOpenTranscriptPanel() {
 
 
 async function tryOpenViaShowTranscriptButton() {
-  const transcriptButton = document.querySelector('ytd-video-description-transcript-section-renderer button[aria-label="Show transcript"]');
+  const transcriptButton = document.querySelector('ytd-video-description-transcript-section-renderer button[aria-label="Show transcript"], ytd-video-description-transcript-section-renderer button');
   
-  if (transcriptButton) {
+  if (transcriptButton && isShowTranscriptButton(transcriptButton)) {
+    transcriptButton.scrollIntoView({ block: 'center', inline: 'nearest' });
     transcriptButton.click();
     await new Promise(resolve => setTimeout(resolve, 1500));
     return true;
@@ -521,10 +558,20 @@ async function tryOpenViaShowTranscriptButton() {
   const buttons = Array.from(document.querySelectorAll('button, yt-button-renderer button, ytd-button-renderer button'));
 
   for (const button of buttons) {
+    if (button.id && button.id.startsWith('captionclip-')) {
+      continue;
+    }
+
+    if (button.closest('#captionclip-container')) {
+      continue;
+    }
+
     const text = button.textContent.toLowerCase();
     const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
-    if (text.includes('transcript') || text.includes('show transcript') || 
-        ariaLabel.includes('transcript') || ariaLabel.includes('show transcript')) {
+    if (isShowTranscriptButton(button) ||
+        text.trim() === 'transcript' ||
+        ariaLabel.trim() === 'transcript') {
+      button.scrollIntoView({ block: 'center', inline: 'nearest' });
       button.click();
 
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -535,16 +582,31 @@ async function tryOpenViaShowTranscriptButton() {
   throw new Error('Direct transcript button not found');
 }
 
+function isShowTranscriptButton(button) {
+  const text = button.textContent.toLowerCase().trim();
+  const ariaLabel = button.getAttribute('aria-label')?.toLowerCase().trim() || '';
+
+  return text === 'show transcript' ||
+         ariaLabel === 'show transcript' ||
+         text.includes('show transcript') ||
+         ariaLabel.includes('show transcript');
+}
+
 function extractYouTubeTranscript() {
-  const segmentsContainer = document.getElementById('segments-container');
-  if (!segmentsContainer) {
-    return "Transcript container not found.";
+  const modernTranscript = extractModernYouTubeTranscript();
+  if (modernTranscript) {
+    return modernTranscript;
   }
 
+  const segmentsContainer = document.getElementById('segments-container');
+  if (!segmentsContainer) {
+    return '';
+  }
+  
   const segments = segmentsContainer.querySelectorAll('ytd-transcript-segment-renderer');
 
   if (segments.length === 0) {
-    return "No transcript segments found. The video might not have a transcript.";
+    return '';
   }
 
   const transcriptParts = [];
@@ -556,6 +618,123 @@ function extractYouTubeTranscript() {
   });
 
   return transcriptParts.join(' ');
+}
+
+function extractModernYouTubeTranscript() {
+  const panel = findTranscriptPanel();
+  if (!panel) {
+    return '';
+  }
+
+  const segmentHosts = panel.querySelectorAll('transcript-segment-view-model, .ytwTranscriptSegmentViewModelHost');
+  const transcriptParts = [];
+
+  segmentHosts.forEach(segment => {
+    const textNodes = Array.from(segment.querySelectorAll('[role="text"], .ytAttributedStringHost'))
+      .filter(node => !node.classList.contains('ytwTranscriptSegmentViewModelTimestamp') &&
+                      !node.classList.contains('ytwTranscriptSegmentViewModelTimestampA11yLabel'));
+
+    const text = textNodes
+      .map(node => node.textContent.trim())
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    if (text) {
+      transcriptParts.push(text);
+    }
+  });
+
+  if (transcriptParts.length > 0) {
+    return transcriptParts.join(' ');
+  }
+
+  return extractTranscriptFromPanelText(panel);
+}
+
+function extractTranscriptFromPanelText(panel) {
+  const lines = (panel.innerText || '')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  const transcriptParts = [];
+  const timestampPattern = /^\d{1,2}:\d{2}(?::\d{2})?$/;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!timestampPattern.test(lines[index])) {
+      continue;
+    }
+
+    const candidate = lines[index + 2];
+    if (candidate && !timestampPattern.test(candidate) && !/^(Transcript|Search transcript|Sync to video time)$/i.test(candidate)) {
+      transcriptParts.push(candidate);
+    }
+  }
+
+  return transcriptParts.join(' ');
+}
+
+function findTranscriptPanel() {
+  const panels = Array.from(document.querySelectorAll([
+    'ytd-engagement-panel-section-list-renderer[target-id="PAmodern_transcript_view"]',
+    'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]',
+    'ytd-transcript-search-panel-renderer'
+  ].join(', ')));
+
+  return panels.find(panel => panel.querySelector('transcript-segment-view-model, .ytwTranscriptSegmentViewModelHost, ytd-transcript-segment-renderer')) ||
+         panels.find(isVisibleElement) ||
+         panels[0] ||
+         null;
+}
+
+function hasTranscriptSegments() {
+  return !!document.querySelector([
+    'ytd-engagement-panel-section-list-renderer[target-id="PAmodern_transcript_view"] transcript-segment-view-model',
+    'ytd-engagement-panel-section-list-renderer[target-id="PAmodern_transcript_view"] .ytwTranscriptSegmentViewModelHost',
+    'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"] transcript-segment-view-model',
+    'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"] .ytwTranscriptSegmentViewModelHost',
+    '#segments-container ytd-transcript-segment-renderer'
+  ].join(', '));
+}
+
+function isVisibleElement(element) {
+  return !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
+}
+
+function waitForTranscriptSegments(timeout = 10000) {
+  return waitForAnyElement([
+    'ytd-engagement-panel-section-list-renderer[target-id="PAmodern_transcript_view"] transcript-segment-view-model',
+    'ytd-engagement-panel-section-list-renderer[target-id="PAmodern_transcript_view"] .ytwTranscriptSegmentViewModelHost',
+    'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"] transcript-segment-view-model',
+    'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"] .ytwTranscriptSegmentViewModelHost',
+    '#segments-container ytd-transcript-segment-renderer'
+  ], timeout);
+}
+
+function waitForAnyElement(selectors, timeout = 10000) {
+  return new Promise((resolve, reject) => {
+    const startTime = Date.now();
+
+    const checkElement = () => {
+      for (const selector of selectors) {
+        const element = document.querySelector(selector);
+        if (element) {
+          resolve(element);
+          return;
+        }
+      }
+
+      if (Date.now() - startTime > timeout) {
+        reject(new Error(`Timeout waiting for elements: ${selectors.join(', ')}`));
+        return;
+      }
+
+      setTimeout(checkElement, 300);
+    };
+
+    checkElement();
+  });
 }
 
 function waitForElement(selector, timeout = 10000) {

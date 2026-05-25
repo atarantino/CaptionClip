@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.7.0] - 2026-05-25
+
+### Fixed
+- Improved CaptionClip top-bar button contrast in YouTube light mode with an explicit border and shadow.
+
+## [1.6.0] - 2026-05-25
+
+### Fixed
+- Restored button injection on YouTube pages that enforce Trusted Types by replacing SVG `innerHTML` insertion with DOM-created SVG nodes.
+- Restored transcript extraction for YouTube's current transcript panel (`PAmodern_transcript_view`) while keeping the older transcript renderer fallback.
+
+### Changed
+- Expanded Chrome and Firefox tests to verify that CaptionClip copies real transcript text, not just that the button appears.
+
 ## [1.3.0] - 2025-01-07
 
 ### Changed
