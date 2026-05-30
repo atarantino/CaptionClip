@@ -26,46 +26,7 @@
       if (buttonAnchor) {
         clearInterval(checkForButtonAnchor);
         
-        const htmlElement = document.documentElement;
-        const bodyElement = document.body;
-        const bodyStyles = window.getComputedStyle(bodyElement);
-        const htmlStyles = window.getComputedStyle(htmlElement);
-        
-        let isDarkTheme = false;
-        
-        const ytdApp = document.querySelector('ytd-app');
-        if (ytdApp) {
-          isDarkTheme = ytdApp.hasAttribute('dark') || 
-                       ytdApp.getAttribute('theme') === 'dark' ||
-                       ytdApp.classList.contains('dark');
-        }
-        
-        if (!isDarkTheme) {
-          isDarkTheme = htmlElement.hasAttribute('dark') || 
-                       htmlElement.getAttribute('theme') === 'dark' ||
-                       htmlElement.classList.contains('dark') ||
-                       bodyElement.getAttribute('theme') === 'dark' ||
-                       bodyElement.classList.contains('dark');
-        }
-        
-        if (!isDarkTheme) {
-          const topBar = document.querySelector('#masthead, #container.ytd-masthead');
-          if (topBar) {
-            const topBarStyles = window.getComputedStyle(topBar);
-            const topBarBg = topBarStyles.backgroundColor;
-            isDarkTheme = topBarBg.includes('33, 33, 33') || 
-                         topBarBg.includes('24, 24, 24') || 
-                         topBarBg.includes('15, 15, 15') ||
-                         topBarBg.includes('35, 35, 35');
-          }
-        }
-        
-        if (!isDarkTheme) {
-          isDarkTheme = bodyStyles.backgroundColor.includes('24, 24, 24') ||
-                       bodyStyles.backgroundColor.includes('15, 15, 15') ||
-                       htmlStyles.backgroundColor.includes('24, 24, 24') ||
-                       htmlStyles.backgroundColor.includes('15, 15, 15');
-        }
+        const isDarkTheme = isYouTubeDarkTheme();
         
         // Create container for button and settings
         const captionClipContainer = document.createElement('div');
@@ -295,7 +256,7 @@
         function updateButtonText() {
           const customPrepend = localStorage.getItem('captionclip-prepend');
           if (customPrepend && customPrepend.trim()) {
-            textSpan.textContent = 'Custom';
+            textSpan.textContent = 'Transcript';
             captionClipButton.setAttribute('title', `Extract transcript with custom prepend: "${customPrepend}"`);
           } else {
             textSpan.textContent = 'Transcript';
@@ -389,6 +350,68 @@
     return null;
   }
 
+  function isYouTubeDarkTheme() {
+    const htmlElement = document.documentElement;
+    const bodyElement = document.body;
+    const ytdApp = document.querySelector('ytd-app');
+    const ytdPageManager = document.querySelector('ytd-page-manager');
+
+    if (ytdApp) {
+      const appBackground = window.getComputedStyle(ytdApp).getPropertyValue('--yt-spec-base-background');
+      if (isDarkCssColor(appBackground)) {
+        return true;
+      }
+
+      if (ytdApp.hasAttribute('dark') ||
+          ytdApp.getAttribute('theme') === 'dark' ||
+          ytdApp.classList.contains('dark')) {
+        return true;
+      }
+    }
+
+    if (htmlElement.hasAttribute('dark') ||
+        htmlElement.getAttribute('theme') === 'dark' ||
+        htmlElement.classList.contains('dark') ||
+        bodyElement.getAttribute('theme') === 'dark' ||
+        bodyElement.classList.contains('dark')) {
+      return true;
+    }
+
+    const surfaceElements = [
+      document.querySelector('#masthead'),
+      document.querySelector('#container.ytd-masthead'),
+      ytdPageManager,
+      bodyElement,
+      htmlElement
+    ].filter(Boolean);
+
+    return surfaceElements.some(element => {
+      const styles = window.getComputedStyle(element);
+      return isDarkCssColor(styles.backgroundColor) || isDarkCssColor(styles.colorScheme);
+    });
+  }
+
+  function isDarkCssColor(value) {
+    if (!value || value === 'transparent') {
+      return false;
+    }
+
+    if (value.includes('dark')) {
+      return true;
+    }
+
+    const rgbMatch = value.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+    if (!rgbMatch) {
+      return false;
+    }
+
+    const red = Number(rgbMatch[1]);
+    const green = Number(rgbMatch[2]);
+    const blue = Number(rgbMatch[3]);
+    const luminance = (0.2126 * red) + (0.7152 * green) + (0.0722 * blue);
+    return luminance < 80;
+  }
+
   function createSvgIcon(pathData, size) {
     const namespace = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(namespace, 'svg');
@@ -446,8 +469,8 @@
     
     document.body.removeChild(textarea);
     
-    if (!success) {
-      throw new Error('Failed to copy to clipboard');
+      if (!success) {
+      throw new Error('Failed to copy to clipboard. In Firefox, make sure the extension was loaded from dist/firefox so it has clipboardWrite permission.');
     }
   }
 
@@ -515,6 +538,11 @@ async function openAndExtractTranscript() {
     throw new Error('Not a YouTube video page');
   }
 
+  const captionTrackTranscript = await extractTranscriptFromCaptionTracks();
+  if (captionTrackTranscript) {
+    return captionTrackTranscript;
+  }
+
   if (!hasTranscriptSegments()) {
     await tryOpenTranscriptPanel();
   }
@@ -530,6 +558,171 @@ async function openAndExtractTranscript() {
   }
 
   return transcript;
+}
+
+async function extractTranscriptFromCaptionTracks() {
+  const playerResponse = getYouTubePlayerResponse();
+  const captionTracks = playerResponse
+    ?.captions
+    ?.playerCaptionsTracklistRenderer
+    ?.captionTracks;
+
+  if (!Array.isArray(captionTracks) || captionTracks.length === 0) {
+    return '';
+  }
+
+  const track = chooseCaptionTrack(captionTracks);
+  if (!track?.baseUrl) {
+    return '';
+  }
+
+  const captionUrl = new URL(track.baseUrl);
+  captionUrl.searchParams.set('fmt', 'json3');
+
+  try {
+    const response = await fetch(captionUrl.toString(), { credentials: 'include' });
+    if (!response.ok) {
+      return '';
+    }
+
+    const captionsJson = await response.json();
+    return parseJson3Captions(captionsJson);
+  } catch (jsonError) {
+    return extractTranscriptFromXmlCaptionTrack(track.baseUrl);
+  }
+}
+
+function getYouTubePlayerResponse() {
+  if (window.ytInitialPlayerResponse) {
+    return window.ytInitialPlayerResponse;
+  }
+
+  const scripts = Array.from(document.scripts);
+  for (const script of scripts) {
+    const scriptText = script.textContent || '';
+    const markerMatch = scriptText.match(/ytInitialPlayerResponse\s*=\s*/);
+    if (!markerMatch || typeof markerMatch.index !== 'number') {
+      continue;
+    }
+
+    const jsonStart = markerMatch.index + markerMatch[0].length;
+    const jsonEnd = findBalancedJsonEnd(scriptText, jsonStart);
+    if (jsonEnd === -1) {
+      continue;
+    }
+
+    try {
+      return JSON.parse(scriptText.slice(jsonStart, jsonEnd + 1));
+    } catch (parseError) {
+    }
+  }
+
+  return null;
+}
+
+function findBalancedJsonEnd(text, startIndex) {
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = startIndex; index < text.length; index += 1) {
+    const char = text[index];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === '\\') {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+    } else if (char === '{') {
+      depth += 1;
+    } else if (char === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        return index;
+      }
+    }
+  }
+
+  return -1;
+}
+
+function chooseCaptionTrack(captionTracks) {
+  const preferredLanguages = getPreferredLanguages();
+
+  for (const language of preferredLanguages) {
+    const matchingTrack = captionTracks.find(track => track.languageCode?.toLowerCase() === language);
+    if (matchingTrack) {
+      return matchingTrack;
+    }
+  }
+
+  return captionTracks.find(track => track.kind !== 'asr') ||
+         captionTracks.find(track => track.languageCode?.toLowerCase().startsWith('en')) ||
+         captionTracks[0];
+}
+
+function getPreferredLanguages() {
+  const browserLanguages = Array.isArray(navigator.languages) && navigator.languages.length > 0
+    ? navigator.languages
+    : [navigator.language || 'en'];
+
+  const languages = [];
+  browserLanguages.forEach(language => {
+    const normalized = language.toLowerCase();
+    languages.push(normalized);
+    languages.push(normalized.split('-')[0]);
+  });
+
+  return Array.from(new Set([...languages, 'en']));
+}
+
+function parseJson3Captions(captionsJson) {
+  if (!Array.isArray(captionsJson?.events)) {
+    return '';
+  }
+
+  return captionsJson.events
+    .map(event => {
+      if (!Array.isArray(event.segs)) {
+        return '';
+      }
+
+      return event.segs
+        .map(segment => segment.utf8 || '')
+        .join('')
+        .replace(/\s+/g, ' ')
+        .trim();
+    })
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+}
+
+async function extractTranscriptFromXmlCaptionTrack(baseUrl) {
+  try {
+    const response = await fetch(baseUrl, { credentials: 'include' });
+    if (!response.ok) {
+      return '';
+    }
+
+    const xmlText = await response.text();
+    const documentXml = new DOMParser().parseFromString(xmlText, 'text/xml');
+    return Array.from(documentXml.querySelectorAll('text'))
+      .map(node => node.textContent.replace(/\s+/g, ' ').trim())
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+  } catch (xmlError) {
+    return '';
+  }
 }
 
 async function tryOpenTranscriptPanel() {
@@ -630,6 +823,12 @@ function extractModernYouTubeTranscript() {
   const transcriptParts = [];
 
   segmentHosts.forEach(segment => {
+    const rowText = extractTranscriptTextFromSegmentRow(segment);
+    if (rowText) {
+      transcriptParts.push(rowText);
+      return;
+    }
+
     const textNodes = Array.from(segment.querySelectorAll('[role="text"], .ytAttributedStringHost'))
       .filter(node => !node.classList.contains('ytwTranscriptSegmentViewModelTimestamp') &&
                       !node.classList.contains('ytwTranscriptSegmentViewModelTimestampA11yLabel'));
@@ -666,13 +865,30 @@ function extractTranscriptFromPanelText(panel) {
       continue;
     }
 
-    const candidate = lines[index + 2];
-    if (candidate && !timestampPattern.test(candidate) && !/^(Transcript|Search transcript|Sync to video time)$/i.test(candidate)) {
+    const candidate = [lines[index + 1], lines[index + 2]]
+      .find(line => line && !timestampPattern.test(line) && !isTranscriptPanelChromeText(line));
+    if (candidate) {
       transcriptParts.push(candidate);
     }
   }
 
   return transcriptParts.join(' ');
+}
+
+function extractTranscriptTextFromSegmentRow(segment) {
+  const timestampPattern = /^\d{1,2}:\d{2}(?::\d{2})?$/;
+  const lines = (segment.innerText || segment.textContent || '')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .filter(line => !timestampPattern.test(line))
+    .filter(line => !isTranscriptPanelChromeText(line));
+
+  return lines.join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function isTranscriptPanelChromeText(text) {
+  return /^(Transcript|Search transcript|Search in video|Sync to video time|English(?:\s+\(auto-generated\))?)$/i.test(text);
 }
 
 function findTranscriptPanel() {

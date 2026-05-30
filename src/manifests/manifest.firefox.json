@@ -1,9 +1,11 @@
 {
   "manifest_version": 2,
   "name": "CaptionClip",
-  "version": "1.7",
+  "version": "1.9",
   "description": "Extract YouTube video transcripts with one click. Instantly copy closed captions/subtitles to your clipboard.",
-  "permissions": [],
+  "permissions": [
+    "clipboardWrite"
+  ],
   "content_scripts": [
     {
       "matches": [

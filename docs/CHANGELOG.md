@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.9.0] - 2026-05-30
+
+### Fixed
+- Fixed Firefox clipboard extraction for YouTube's current transcript panel so copied text includes the full transcript instead of only the language label.
+
+## [1.8.0] - 2026-05-30
+
+### Fixed
+- Restored transcript extraction after YouTube transcript panel updates by reading caption tracks directly from YouTube player metadata before falling back to DOM extraction.
+
 ## [1.7.0] - 2026-05-25
 
 ### Fixed
