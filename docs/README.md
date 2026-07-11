@@ -2,6 +2,10 @@
 
 A browser extension that extracts transcripts from YouTube videos with a single click.
 
+[Firefox Addon Link](https://addons.mozilla.org/en-US/firefox/addon/captionclip/)
+
+[Chrome Web Store Link](https://chromewebstore.google.com/detail/captionclip/fimopkdkkbjlghikfknojfconkcfodnk?hl=en-US)
+
 ## Installation
 
 ### Chrome
